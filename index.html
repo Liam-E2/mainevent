@@ -14,7 +14,7 @@
 <script>
     // EventSource object of javascript listens the streaming events from our go server and prints the message.
     var stream = new EventSource("/events/subscribe/stream");
-    stream.addEventListener("message", function(e){
+    stream.addEventListener("stream", function(e){
         $('.event-data').append(e.data + "</br>")
     });
 </script>

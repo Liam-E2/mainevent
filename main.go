@@ -5,28 +5,10 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"bytes"
+
 	"github.com/gin-gonic/gin"
 )
 
-// It keeps a list of clients those are currently attached
-// and broadcasting events to those clients.
-type Event struct {
-	// Events are pushed to this channel by the main events-gathering routine
-	Message chan string
-
-	// New client connections
-	NewClients chan chan string
-
-	// Closed client connections
-	ClosedClients chan chan string
-
-	// Total client connections
-	TotalClients map[chan string]bool
-}
-
-// New event messages are broadcast to all registered client connection channels
-type ClientChan chan string
 
 func main() {
 	router := gin.Default()
@@ -34,9 +16,11 @@ func main() {
 	// Initialize new streaming server
 	stream := NewServer()
 
-	subscribe := router.Group("/events/subscribe")
+	subscribe := router.Group("/events/subscribe/:name")
 
-	subscribe.GET("/stream", HeadersMiddleware(), stream.serveHTTP(), func(c *gin.Context) {
+	subscribe.GET("/", HeadersMiddleware(), stream.serveHTTP(), func(c *gin.Context) {
+		name := c.Param("name") // Get event name from path param
+		log.Printf("Subscribe request for name %s", name)
 		v, ok := c.Get("clientChan")
 		if !ok {
 			return
@@ -47,8 +31,8 @@ func main() {
 		}
 		c.Stream(func(w io.Writer) bool {
 			// Stream message to client from message channel
-			if msg, ok := <-clientChan; ok {
-				c.SSEvent("message", msg)
+			if msg, ok := <-clientChan.Chan; ok {
+				c.SSEvent(name, msg)
 				return true
 			}
 			return false
@@ -64,18 +48,17 @@ func main() {
 			c.AbortWithStatusJSON(http.StatusBadRequest, errResp)
 			return 
 		}
-		var json_data Question
-		decoder := json.NewDecoder(bytes.NewBuffer(json_bytes))
-		decoder.DisallowUnknownFields()
-		err = decoder.Decode(&json_data) 
+		var json_data SSEPub
+		err = json.Unmarshal(json_bytes, &json_data)
 		if err != nil {
 			errResp := map[string]string{"error": "Misformatted Question"}
 			c.AbortWithStatusJSON(http.StatusBadRequest, errResp)
 			return 
 		}
-
-		stream.Message <- string(json_bytes)
-		c.String(http.StatusOK, "Gadzukes, there are %v connections", len(stream.TotalClients))
+		
+		json_data.Data = string(json_bytes)
+		stream.Message <- json_data
+		c.String(http.StatusOK, json_data.Name)
 	})
 
 	// Parse Static files
@@ -84,64 +67,7 @@ func main() {
 	router.Run(":8001")
 }
 
-// Initialize event and Start processing requests
-func NewServer() (event *Event) {
-	event = &Event{
-		Message:       make(chan string),
-		NewClients:    make(chan chan string),
-		ClosedClients: make(chan chan string),
-		TotalClients:  make(map[chan string]bool),
-	}
 
-	go event.listen()
-
-	return
-}
-
-// It Listens all incoming requests from clients.
-// Handles addition and removal of clients and broadcast messages to clients.
-func (stream *Event) listen() {
-	for {
-		select {
-		// Add new available client
-		case client := <-stream.NewClients:
-			stream.TotalClients[client] = true
-			log.Printf("Client added. %d registered clients", len(stream.TotalClients))
-
-		// Remove closed client
-		case client := <-stream.ClosedClients:
-			delete(stream.TotalClients, client)
-			close(client)
-			log.Printf("Removed client. %d registered clients", len(stream.TotalClients))
-
-		// Broadcast message to client
-		case eventMsg := <-stream.Message:
-			for clientMessageChan := range stream.TotalClients {
-				clientMessageChan <- eventMsg
-				log.Printf("Pushed data to client. %d registered clients", len(stream.TotalClients))
-			}
-		}
-	}
-}
-
-func (stream *Event) serveHTTP() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Initialize client channel
-		clientChan := make(ClientChan)
-
-		// Send new connection to event server
-		stream.NewClients <- clientChan
-
-		defer func() {
-			// Send closed connection to event server
-			stream.ClosedClients <- clientChan
-		}()
-
-		c.Set("clientChan", clientChan)
-
-		c.Next()
-	}
-}
 
 func HeadersMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -152,7 +78,7 @@ func HeadersMiddleware() gin.HandlerFunc {
 		c.Writer.Header().Set("Transfer-Encoding", "chunked")
 
 		// CORS
-        c.Writer.Header().Set("Access-Control-Allow-Origin", "localhost")
+        c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
         c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
         c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
         c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
@@ -163,12 +89,4 @@ func HeadersMiddleware() gin.HandlerFunc {
         }
 		c.Next()
 	}
-}
-
-func CORSMiddleware() gin.HandlerFunc {
-    return func(c *gin.Context) {
-
-
-        c.Next()
-    }
 }
