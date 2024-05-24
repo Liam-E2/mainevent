@@ -14,17 +14,17 @@ type FakePoller struct {
 	t *testing.T
 }
 
-func (p FakePoller) Poll(opts eventsource.PollerConfig) error{
+func (p FakePoller) Poll(opts eventsource.PollerConfig) ([]byte, error){
 	p.t.Log("Polling!")
 	client := http.Client{}
-	data := bytes.NewReader(make([]byte, 10))
-	resp, err := client.Post(opts.EventServerAddr+"/test", "application/json", data)
+	data := make([]byte, 10)
+	resp, err := client.Post(opts.EventServerAddr+"/test", "application/json", bytes.NewReader(data))
 	if err != nil {
 		fmt.Printf("%s", err)
-		return err
+		return nil, err
 	}
 	fmt.Printf("%v", resp)
-	return nil
+	return data, nil
 }
 
 func FakeHandler(w http.ResponseWriter, r *http.Request) {

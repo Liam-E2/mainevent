@@ -1,7 +1,11 @@
 package eventsource
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"time"
 )
 
@@ -22,7 +26,7 @@ type PollerConfig struct {
 
 
 type Poller interface {
-	Poll(opts PollerConfig) error
+	Poll(opts PollerConfig) ([]byte, error)
 }
 
 func Run(p Poller, opts PollerConfig) error {
@@ -32,17 +36,54 @@ func Run(p Poller, opts PollerConfig) error {
 	}
 
 	go func(poller Poller, options PollerConfig) error{
+		// Setup for publishing poll data - run outside loop
+		client := http.Client{}
+		postUrl := fmt.Sprintf("%s/events/publish", options.EventServerAddr)
+		headers := make(map[string]string)
+		headers["X-Event-Name"] = options.EventName
+
 		for {
 			select {
-			case close := <- options.DoneChan:
-				log.Printf("Closing polling loop %v", close)
-				return nil
-			default:
-				err := poller.Poll(options)
-				if err != nil {
-					log.Printf("\nError in poller: %s\n", err)
-				}
-				time.Sleep(time.Duration(opts.PollSeconds) * time.Second)
+				case close := <- options.DoneChan:
+					log.Printf("Closing polling loop %v", close)
+					return nil
+				default:
+					// Run Poll method
+					pollData, err := poller.Poll(options)
+					if err != nil {
+						log.Printf("\nError in poller: %s\n", err)
+						time.Sleep(time.Duration(opts.PollSeconds) * time.Second)
+						continue
+					} 
+
+					// Build Request to event source server
+					req, err := http.NewRequest("POST", postUrl, bytes.NewReader(pollData))
+					if err != nil {
+						log.Printf("Error building new request: %s", err)
+						time.Sleep(time.Duration(opts.PollSeconds) * time.Second)
+						continue
+					}
+					req.Header.Add("X-Event-Name", options.EventName)
+
+					// Send Request
+					resp, err := client.Do(req)
+					if err != nil {
+						log.Printf("Error sending request to event server: %s", err)
+						time.Sleep(time.Duration(opts.PollSeconds) * time.Second)
+						continue
+					}
+
+					// Read req body to fulfill net.http contract/log
+					bodybytes, err := io.ReadAll(resp.Body)
+					if err != nil {
+						log.Printf("Error reading response Body: %s", err)
+						time.Sleep(time.Duration(opts.PollSeconds) * time.Second)
+						continue
+					}
+					log.Printf("Event source response to publish: %s\n", string(bodybytes))
+					resp.Body.Close()
+
+					time.Sleep(time.Duration(opts.PollSeconds) * time.Second)
 			}
 		}
 	}(p, opts)
