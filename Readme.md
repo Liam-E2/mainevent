@@ -28,3 +28,8 @@ Subscribes to the topic specified by name. Opens long-lived HTTP connection whic
 
 ### GET /docs
 Returns this markdown document, unrendered.
+
+## Environment Variables
+EVENTSOURCEHOST server host
+EVENTSOURCEPORT server port
+GIN_MODE gin release vs debug
