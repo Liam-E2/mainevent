@@ -39,9 +39,8 @@ func Run(p Poller, opts PollerConfig) error {
 		// Setup for publishing poll data - run outside loop
 		client := http.Client{}
 		postUrl := fmt.Sprintf("%s/events/publish", options.EventServerAddr)
-		headers := make(map[string]string)
-		headers["X-Event-Name"] = options.EventName
 
+		// Either close or poll
 		for {
 			select {
 				case close := <- options.DoneChan:
