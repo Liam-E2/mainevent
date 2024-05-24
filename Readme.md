@@ -1,6 +1,6 @@
 # Simple Golang SSE Pub/Sub
 
-Runs a gin server at http://localhost:8080 which runs a minimal event bus that uses Server-Sent Events to demonstrate:
+Runs a gin server at http://localhost:9019 (or 0.0.0.0 via Docker) which runs minimal event bus middleware that uses Server-Sent Events to demonstrate:
   - Accepting subscriptions to named event topics
   - Publishing events to named event topics
   - A demo frontend which displays events published to the "stream" topic
@@ -16,13 +16,15 @@ Publishes the event data to the topic specified by X-Event-Name.
     Request Body:
         json-encoded event data
     Response Headers:
-        See HeadersMiddleware()
+        See HeadersMiddleware(), as well as Content-Type: text/event-stream
     Response Body:
         "topic name"
-
 
 ### GET /events/subscribe/{name}
 Subscribes to the topic specified by name. Opens long-lived HTTP connection which recieves published SSE e.g. by EventSource in browser.
 
     Response Headers:
         see HeadersMiddleware()
+
+### GET /docs
+Returns this markdown document, unrendered.
