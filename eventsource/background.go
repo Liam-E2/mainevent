@@ -14,7 +14,7 @@ func (p PollerError) Error() string {
 }
 
 type PollerOpts struct {
-	PollTime time.Duration
+	PollSeconds int
 	DoneChan chan bool
 }
 
@@ -24,8 +24,8 @@ type Poller interface {
 
 func Run(p Poller, opts PollerOpts) error {
 
-	if opts.PollTime == 0 {
-		return PollerError{"Must set valid pollTime"}
+	if opts.PollSeconds == 0 {
+		return PollerError{"Must set int PollTime > 0"}
 	}
 
 	go func(poller Poller, options PollerOpts) error{
@@ -36,7 +36,7 @@ func Run(p Poller, opts PollerOpts) error {
 				return nil
 			default:
 				poller.Poll(options)
-				time.Sleep(opts.PollTime)
+				time.Sleep(time.Duration(opts.PollSeconds) * time.Second)
 			}
 		}
 	}(p, opts)
