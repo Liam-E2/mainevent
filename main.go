@@ -65,7 +65,12 @@ func main() {
 	// Serve simple demo frontend
 	router.StaticFile("/", "./index.html")
 
-	router.Run(":8080")
+	// Serve Docs as Markdown
+	docs := router.Group("/docs")
+	docs.GET("/", func(c *gin.Context) {
+		c.File("./Readme.md")
+	})
+
 }
 
 
