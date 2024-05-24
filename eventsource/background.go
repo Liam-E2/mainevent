@@ -1,8 +1,8 @@
 package eventsource
 
 import (
-	"time"
 	"log"
+	"time"
 )
 
 type PollerError struct {
@@ -16,7 +16,10 @@ func (p PollerError) Error() string {
 type PollerOpts struct {
 	PollSeconds int
 	DoneChan chan bool
+	EventName string
+	EventServerAddr string
 }
+
 
 type Poller interface {
 	Poll(opts PollerOpts) error
