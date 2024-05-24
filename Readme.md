@@ -1,6 +1,6 @@
 # Simple Golang SSE Pub/Sub
 
-Runs a gin server at http://localhost:8080 which runs minimal event bus middleware that uses Server-Sent Events to demonstrate:
+Runs a gin server at http://localhost:9019 (or 0.0.0.0 via Docker) which runs minimal event bus middleware that uses Server-Sent Events to demonstrate:
   - Accepting subscriptions to named event topics
   - Publishing events to named event topics
   - A demo frontend which displays events published to the "stream" topic
@@ -27,4 +27,4 @@ Subscribes to the topic specified by name. Opens long-lived HTTP connection whic
         see HeadersMiddleware()
 
 ### GET /docs
-Returns this markdown document.
+Returns this markdown document, unrendered.

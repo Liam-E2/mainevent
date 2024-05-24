@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -62,15 +65,27 @@ func main() {
 		c.String(http.StatusOK, json_data.Name)
 	})
 
-	// Serve simple demo frontend
-	router.StaticFile("/", "./index.html")
-
 	// Serve Docs as Markdown
 	docs := router.Group("/docs")
 	docs.GET("/", func(c *gin.Context) {
 		c.File("./Readme.md")
+		c.AbortWithStatus(http.StatusOK)
 	})
 
+	// Serve simple demo frontend
+	router.StaticFile("/", "./index.html")
+
+	// Run Router
+	host, specified := os.LookupEnv("EVENTSOURCEHOST")
+	if !specified {
+		host = "localhost"
+	}
+	port, specified := os.LookupEnv("EVENTSOURCEPORT")
+	if !specified {
+		port = "9019"
+	}
+	addr := fmt.Sprintf("%s:%s", host, port)
+	router.Run(addr)
 }
 
 
