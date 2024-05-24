@@ -5,21 +5,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Unmarshal published event to SSEPub to get name
+// Struct to hold SSE event data
+// Event should have a channel name/topic 
+// and string data 
 type SSEPub struct{
 	Name string `json:"name"`
 	Data string
 }
 
 
-// New event messages are broadcast to all registered client connection channels
+// Wrapper for a chan string attached to some topic Name
 type ClientChan struct {
 	Chan chan string
 	Name string
 }
 
 
-// It keeps a list of clients those are currently attached
+// Keeps a list of clients those are currently attached
 // and broadcasting events to those clients.
 type Event struct {
 	// Events are pushed to this channel by the main events-gathering routine
@@ -41,7 +43,7 @@ func NewServer() (event *Event) {
 		Message:       make(chan SSEPub),
 		NewClients:    make(chan ClientChan),
 		ClosedClients: make(chan ClientChan),
-		NamedClients:  make(map[string]map[ClientChan]bool),
+		NamedClients:  make(map[string]map[ClientChan]bool), // map[channelName][channel][dummyBool]
 	}
 
 	go event.listen()
@@ -49,7 +51,7 @@ func NewServer() (event *Event) {
 	return
 }
 
-// It Listens all incoming requests from clients.
+// Listens to incoming events
 // Handles addition and removal of clients and broadcast messages to clients.
 func (stream *Event) listen() {
 	for {
@@ -62,14 +64,13 @@ func (stream *Event) listen() {
 			stream.NamedClients[client.Name][client] = true
 			log.Printf("Client added. %d registered clients", len(stream.NamedClients[client.Name]))
 
-		// Remove closed client
+		// Remove closed client from NamedClients map
 		case client := <-stream.ClosedClients:
 			delete(stream.NamedClients[client.Name], client)
 			close(client.Chan)
 			log.Printf("Removed client. %d registered clients", len(stream.NamedClients[client.Name]))
 
 		// Broadcast message to client
-		// stream.TotalClients dependency here
 		case eventMsg := <-stream.Message:
 			for clientMessageChan := range stream.NamedClients[eventMsg.Name] { 
 				clientMessageChan.Chan <- eventMsg.Data
@@ -82,6 +83,8 @@ func (stream *Event) listen() {
 
 
 func (stream *Event) serveHTTP() gin.HandlerFunc {
+	// On receiving a subscription request -
+	// Create new channel for client, pass on to event server, defer closing the client, continue on
 	return func(c *gin.Context) {
 		// Initialize client channel
 		clientChan := make(chan string)
