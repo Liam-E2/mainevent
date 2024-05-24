@@ -32,5 +32,7 @@ Returns this markdown document, unrendered.
 ## Environment Variables
 
 EVENTSOURCEHOST server host
+
 EVENTSOURCEPORT server port
+
 GIN_MODE gin release vs debug
