@@ -8,6 +8,7 @@ RUN go mod tidy
 
 RUN go build -o /bin/app
 
+EXPOSE 9019
 ENV EVENTSOURCEHOST 0.0.0.0
 ENV EVENTSOURCEPORT 9019
 
