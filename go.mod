@@ -1,4 +1,4 @@
-module event-source
+module mainevent
 
 go 1.21.3
 
