@@ -32,10 +32,6 @@ func FakeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestPoller(t *testing.T){
-	// Create test server
-	http.HandleFunc("/test", FakeHandler)
-	go http.ListenAndServe("localhost:9019", nil)
-
 	// Create test poller
 	var p eventsource.Poller = FakePoller{t}
 	doneChan := make(chan bool)
@@ -43,6 +39,11 @@ func TestPoller(t *testing.T){
 
 	// Run poller
 	eventsource.Run(p, opts)
+
+	// Create test server
+	http.HandleFunc("/test", FakeHandler)
+	go http.ListenAndServe("localhost:9019", nil)
+
 	time.Sleep(10 * time.Second)
 	doneChan <- true
 }

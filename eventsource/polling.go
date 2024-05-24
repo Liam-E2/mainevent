@@ -40,7 +40,7 @@ func Run(p Poller, opts PollerConfig) error {
 			default:
 				err := poller.Poll(options)
 				if err != nil {
-					log.Printf("Error in poller: %s", err)
+					log.Printf("\nError in poller: %s\n", err)
 				}
 				time.Sleep(time.Duration(opts.PollSeconds) * time.Second)
 			}
