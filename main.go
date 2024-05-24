@@ -8,7 +8,7 @@ import (
 )
 
 func main(){
-	// Run Router
+	// Get addr from env
 	host, specified := os.LookupEnv("EVENTSOURCEHOST")
 	if !specified {
 		host = "localhost"
@@ -19,5 +19,8 @@ func main(){
 	}
 	addr := fmt.Sprintf("%s:%s", host, port)
 
+	// Add pollers
+
+	// Run server
 	log.Fatal(eventsource.RunServer(addr))
 }

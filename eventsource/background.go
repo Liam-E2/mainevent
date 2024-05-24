@@ -38,7 +38,10 @@ func Run(p Poller, opts PollerConfig) error {
 				log.Printf("Closing polling loop %v", close)
 				return nil
 			default:
-				poller.Poll(options)
+				err := poller.Poll(options)
+				if err != nil {
+					log.Printf("Error in poller: %s", err)
+				}
 				time.Sleep(time.Duration(opts.PollSeconds) * time.Second)
 			}
 		}
