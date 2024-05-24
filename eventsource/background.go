@@ -13,7 +13,7 @@ func (p PollerError) Error() string {
 	return p.msg
 }
 
-type PollerOpts struct {
+type PollerConfig struct {
 	PollSeconds int
 	DoneChan chan bool
 	EventName string
@@ -22,16 +22,16 @@ type PollerOpts struct {
 
 
 type Poller interface {
-	Poll(opts PollerOpts) error
+	Poll(opts PollerConfig) error
 }
 
-func Run(p Poller, opts PollerOpts) error {
+func Run(p Poller, opts PollerConfig) error {
 
 	if opts.PollSeconds == 0 {
 		return PollerError{"Must set int PollTime > 0"}
 	}
 
-	go func(poller Poller, options PollerOpts) error{
+	go func(poller Poller, options PollerConfig) error{
 		for {
 			select {
 			case close := <- options.DoneChan:
