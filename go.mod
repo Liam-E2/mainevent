@@ -1,4 +1,4 @@
-module gihub.com/Liam-E2/mainevent
+module github.com/Liam-E2/mainevent
 
 go 1.21.3
 
