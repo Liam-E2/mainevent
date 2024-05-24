@@ -1,7 +1,7 @@
 package main
 
 import (
-	"event-source/eventsource"
+	"github.com/Liam-E2/mainevent/eventsource"
 	"os"
 	"log"
 	"fmt"
