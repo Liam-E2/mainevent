@@ -5,6 +5,7 @@ Runs a gin server at http://localhost:9019 (or 0.0.0.0 via Docker) which runs mi
   - Publishing events to named event topics
   - A demo frontend which displays events published to the "stream" topic
   - Simple all-origin CORS configuration from scratch
+  - An interface for running polling functions in the background and publishing the results to a topic
 
 ## Endpoints
 ### POST /events/publish
