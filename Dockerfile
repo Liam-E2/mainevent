@@ -8,4 +8,4 @@ RUN go mod tidy
 
 RUN go build -o /bin/app
 
-CMD ["/bin/event-source"]
+CMD ["/bin/app"]
