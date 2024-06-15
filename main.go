@@ -1,23 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/Liam-E2/mainevent/eventsource"
 	"log"
 	"os"
+
+	"github.com/Liam-E2/mainevent/eventsource"
 )
-
-// Here we don't parameterize the demo poller with anything
-// But one could use Struct fields to parameterize custom pollers
-type DemoPoller struct {
-}
-
-func (p DemoPoller) Poll(opts eventsource.PollerConfig) ([]byte, error){
-	// Returns JSON-encoded bytes
-	data := []byte("{\"static_example\": \"of polling data...\"}")
-	return data, nil
-}
-
 
 func main() {
 	// Get addr from env
@@ -34,16 +24,21 @@ func main() {
 	// Demo Poller Setup
 	doneChan := make(chan bool)
 	pollConfs := eventsource.PollerConfig{
-		PollSeconds: 3, 
-		DoneChan: doneChan, 
-		EventName: "stream", 
-		EventServerAddr: "http://"+addr}
+		PollSeconds:     3,
+		DoneChan:        doneChan,
+		EventName:       "stream",
+		EventServerAddr: "http://" + addr}
 
-	poller := DemoPoller{}
+	poller := eventsource.HTTPPoller{
+		Url:    "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json",
+		Header: map[string]string{"Content-Type": "application/json"},
+		Method: "GET",
+		Body:   bytes.NewReader(make([]byte, 0)),
+	}
 
 	go eventsource.Run(poller, pollConfs) // Run poller in background
-	defer func(){doneChan <- true}() // defer turning off the poller
-	
+	defer func() { doneChan <- true }()   // defer turning off the poller
+
 	// Run server
 	log.Fatal(eventsource.RunServer(addr))
 }

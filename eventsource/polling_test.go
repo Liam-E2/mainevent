@@ -1,8 +1,8 @@
 package eventsource_test
 
 import (
-	"fmt"
 	"bytes"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -14,7 +14,7 @@ type FakePoller struct {
 	t *testing.T
 }
 
-func (p FakePoller) Poll(opts eventsource.PollerConfig) ([]byte, error){
+func (p FakePoller) Poll(opts eventsource.PollerConfig) ([]byte, error) {
 	p.t.Log("Polling!")
 	client := http.Client{}
 	data := make([]byte, 10)
@@ -31,7 +31,7 @@ func FakeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%v\n\n", *r)
 }
 
-func TestPoller(t *testing.T){
+func TestPoller(t *testing.T) {
 	// Create test poller
 	var p eventsource.Poller = FakePoller{t}
 	doneChan := make(chan bool)
