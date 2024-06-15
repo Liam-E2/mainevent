@@ -89,15 +89,11 @@ func Run(p Poller, opts PollerConfig) error {
 	return nil
 }
 
-type BodyParser func([]byte) ([]byte, error)
-
 type HTTPPoller struct {
 	// Simple implementation of poller interface to
 	// Make an HTTP request every n seconds with specified
 	// method, url, header map, and request body.
-	//
-	// Optionally, pass a function []byte -> []byte, error
-	// to parse body and pass byte array through
+	// Returns bytes of response body, error
 	Url    string
 	Header map[string]string
 	Method string
