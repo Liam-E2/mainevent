@@ -4,15 +4,15 @@ import (
 	"io"
 	"log"
 	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
-
-func RunServer(addr string) error {
+func RunServer(addr string, middlewares ...gin.HandlerFunc) error {
 	router := gin.Default()
 
-	// CORS
-	router.Use(HeadersMiddleware())
+	// Middleware
+	router.Use(middlewares...)
 
 	// Initialize new Event Server
 	stream := NewServer()
@@ -45,7 +45,7 @@ func RunServer(addr string) error {
 
 	publish := router.Group("/events/publish")
 
-	publish.POST("/", func(c *gin.Context){
+	publish.POST("/", func(c *gin.Context) {
 		c.Writer.Header().Set("Content-Type", "application/json")
 
 		// Pass body json directly as SSE
@@ -53,7 +53,7 @@ func RunServer(addr string) error {
 		if err != nil {
 			errResp := map[string]string{"error": "Could not read Body"}
 			c.AbortWithStatusJSON(http.StatusBadRequest, errResp)
-			return 
+			return
 		}
 		defer c.Request.Body.Close()
 
@@ -73,29 +73,4 @@ func RunServer(addr string) error {
 	router.StaticFile("/", "./index.html")
 
 	return router.Run(addr)
-}
-
-
-func HeadersMiddleware() gin.HandlerFunc {
-	// Requires headers to be set for SSE, including CORS in case needed in the future
-
-	return func(c *gin.Context) {
-		// SSE - content-type in method
-		c.Writer.Header().Set("Cache-Control", "no-cache")
-		c.Writer.Header().Set("Connection", "keep-alive")
-		c.Writer.Header().Set("Transfer-Encoding", "chunked")
-
-		// CORS
-        c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-        c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-        c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Event-Name")
-        c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
-
-		// Pre-Flight request
-        if c.Request.Method == "OPTIONS" {
-            c.Status(http.StatusOK)
-            return
-        }
-        c.Next()
-    }
 }
