@@ -2,24 +2,23 @@ package eventsource
 
 import (
 	"log"
+
 	"github.com/gin-gonic/gin"
 )
 
 // Struct to hold SSE event data
-// Event should have a channel name/topic 
-// and string data 
-type SSEPub struct{
+// Event should have a channel name/topic
+// and string data
+type SSEPub struct {
 	Name string `json:"name"`
 	Data string
 }
-
 
 // Wrapper for a chan string attached to some topic Name
 type ClientChan struct {
 	Chan chan string
 	Name string
 }
-
 
 // Keeps a list of clients those are currently attached
 // and broadcasting events to those clients.
@@ -72,15 +71,14 @@ func (stream *Event) listen() {
 
 		// Broadcast message to client
 		case eventMsg := <-stream.Message:
-			for clientMessageChan := range stream.NamedClients[eventMsg.Name] { 
+			for clientMessageChan := range stream.NamedClients[eventMsg.Name] {
 				clientMessageChan.Chan <- eventMsg.Data
-				log.Printf("Pushed data to client. %d registered clients", len(stream.NamedClients[clientMessageChan.Name]))
+				log.Printf("Pushed data to client. %d registered clients on topic %s", len(stream.NamedClients[clientMessageChan.Name]), eventMsg.Name)
 				log.Printf("%v", eventMsg)
 			}
 		}
 	}
 }
-
 
 func (stream *Event) serveHTTP() gin.HandlerFunc {
 	// On receiving a subscription request -

@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RunServer(addr string, middlewares ...gin.HandlerFunc) error {
+func NewEventEngine(addr string, middlewares ...gin.HandlerFunc) (*gin.Engine, error) {
 	router := gin.Default()
 
 	// Middleware
@@ -62,15 +62,5 @@ func RunServer(addr string, middlewares ...gin.HandlerFunc) error {
 		c.String(http.StatusOK, json_data.Name)
 	})
 
-	// Serve Docs as Markdown
-	docs := router.Group("/docs")
-	docs.GET("/", func(c *gin.Context) {
-		c.File("./Readme.md")
-		c.AbortWithStatus(http.StatusOK)
-	})
-
-	// Serve simple demo frontend
-	router.StaticFile("/", "./index.html")
-
-	return router.Run(addr)
+	return router, nil
 }

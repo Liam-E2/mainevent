@@ -62,9 +62,37 @@ func main() {
 		Body:   bytes.NewReader(make([]byte, 0)),
 	}
 
-	go eventsource.Run(poller, pollConfs) // Run poller in background
+	go eventsource.Run(poller, pollConfs)
 	defer func() { doneChan <- true }()
 
-	// Run server
-	log.Fatal(eventsource.RunServer(addr, HeadersMiddleware()))
+	// Create Demo Server
+	eng, err := eventsource.NewEventEngine(addr, HeadersMiddleware())
+	if err != nil {
+		log.Fatalf("Error creating server: %s", err)
+		return
+	}
+
+	// Add other endpoints/groups below
+
+	// Download docs
+	eng.GET("/docs", func(c *gin.Context) {
+		c.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		f, err := os.ReadFile("./Readme.md")
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		c.Writer.Write(f)
+		c.AbortWithStatus(http.StatusOK)
+		return
+	})
+
+	// Serve demo frontend
+	eng.GET("/", func(c *gin.Context) {
+		c.File("./index.html")
+		c.AbortWithStatus(http.StatusOK)
+		return
+	})
+
+	log.Fatal(eng.Run(addr))
 }
